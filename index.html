@@ -18,7 +18,7 @@
         #analysisResultSection {
             transition: opacity 0.5s ease-in-out;
         }
-        .analysis-card, .question-card {
+        .analysis-card, .question-card-container {
             transition: all 0.3s ease-in-out;
         }
         .question-card:hover {
@@ -61,6 +61,30 @@
         .cognitive-comprehension { background-color: #cffafe; color: #0891b2; }
         .cognitive-application { background-color: #fef9c3; color: #854d0e; }
         .cognitive-high-order-application { background-color: #fee2e2; color: #991b1b; }
+        .group-lead {
+            background-color: #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-style: italic;
+            color: #4b5563;
+        }
+        .ai-format-btn {
+            padding: 4px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ai-format-btn:hover {
+            background-color: #e0e7ff;
+        }
+        .ai-format-btn svg {
+            width: 16px;
+            height: 16px;
+            color: #4f46e5;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-6 md:p-8">
@@ -102,7 +126,12 @@
                                 </select>
                              </div>
                             <div>
-                                <label for="rawQuestionText" class="block text-sm font-medium text-gray-700 mb-1">Dán văn bản hoặc hình ảnh câu hỏi vào đây:</label>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label for="rawQuestionText" class="block text-sm font-medium text-gray-700">Dán văn bản hoặc hình ảnh câu hỏi vào đây:</label>
+                                    <button type="button" class="ai-format-btn" onclick="formatTextWithAI(this)" title="Định dạng văn bản bằng AI">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M6.38 10.27a.75.75 0 01.67-.52h6.9a.75.75 0 01.67.52l.34 1.7a.75.75 0 01-.52.84l-1.7.34a.75.75 0 01-.84-.52l-.34-1.7a.75.75 0 00-.67-.52h-1.7a.75.75 0 00-.67.52l-.34 1.7a.75.75 0 01-.84.52l-1.7-.34a.75.75 0 01-.52-.84l.34-1.7z"></path><path fill-rule="evenodd" d="M3 9.34a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9.34zM10 3.16a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.16zM8.5 5.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.5 8.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 015.5 8.5zm9 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM10 16.84a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM8.5 14.5a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zm6.5 0a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" clip-rule="evenodd"></path></svg>
+                                    </button>
+                                </div>
                                 <textarea id="rawQuestionText" rows="10" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Dán văn bản hoặc hình ảnh câu hỏi vào đây..."></textarea>
                             </div>
                             <button id="analyzeBtn" class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -123,7 +152,13 @@
         
                     <div class="space-y-8">
                         <div class="bg-white p-6 rounded-xl shadow-lg">
-                            <h2 class="text-2xl font-semibold mb-4 border-b pb-4">Danh sách câu hỏi</h2>
+                            <div class="flex justify-between items-center mb-4 border-b pb-4">
+                                <h2 class="text-2xl font-semibold">Danh sách câu hỏi</h2>
+                                <div class="flex gap-2">
+                                    <button id="addQuestionBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md text-sm">Thêm câu hỏi mới</button>
+                                    <button id="groupBtn" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md text-sm">Nhóm câu hỏi đã chọn</button>
+                                </div>
+                            </div>
                             <div id="questionsList" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                                 <p id="emptyListMessage" class="text-gray-500 text-center py-4">Chưa có câu hỏi nào.</p>
                             </div>
@@ -188,13 +223,40 @@
                         <select id="editQuestionType" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                             <option value="mc">Trắc nghiệm (MC)</option>
                             <option value="tf">Đúng/Sai (TF)</option>
-                            <option value="mtf">Trắc nghiệm Đúng/Sai (MTF)</option>
                             <option value="fib">Điền khuyết (FIB)</option>
+                             <option value="group">Nhóm Đúng/Sai (Group)</option>
                         </select>
                     </div>
-                    <div>
-                        <label for="editQuestionText" class="block text-sm font-medium text-gray-700">Nội dung câu hỏi</label>
-                        <textarea id="editQuestionText" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    <div id="edit-non-group-fields">
+                        <div>
+                             <div class="flex justify-between items-center">
+                                <label for="editQuestionText" class="block text-sm font-medium text-gray-700">Nội dung câu hỏi</label>
+                                 <button type="button" class="ai-format-btn" onclick="formatTextWithAI(this)" title="Định dạng văn bản bằng AI">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M6.38 10.27a.75.75 0 01.67-.52h6.9a.75.75 0 01.67.52l.34 1.7a.75.75 0 01-.52.84l-1.7.34a.75.75 0 01-.84-.52l-.34-1.7a.75.75 0 00-.67-.52h-1.7a.75.75 0 00-.67.52l-.34 1.7a.75.75 0 01-.84.52l-1.7-.34a.75.75 0 01-.52-.84l.34-1.7z"></path><path fill-rule="evenodd" d="M3 9.34a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9.34zM10 3.16a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.16zM8.5 5.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.5 8.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 015.5 8.5zm9 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM10 16.84a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM8.5 14.5a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zm6.5 0a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+                            <textarea id="editQuestionText" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                        <div class="mt-2">
+                            <label class="block text-sm font-medium text-gray-700">Đáp án</label>
+                            <div id="editAnswerSection" class="mt-2 space-y-2"></div>
+                        </div>
+                    </div>
+                    <div id="edit-group-fields" class="hidden">
+                        <div>
+                             <div class="flex justify-between items-center">
+                                <label for="editGroupPrompt" class="block text-sm font-medium text-gray-700">Phần dẫn chung</label>
+                                 <button type="button" class="ai-format-btn" onclick="formatTextWithAI(this)" title="Định dạng văn bản bằng AI">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M6.38 10.27a.75.75 0 01.67-.52h6.9a.75.75 0 01.67.52l.34 1.7a.75.75 0 01-.52.84l-1.7.34a.75.75 0 01-.84-.52l-.34-1.7a.75.75 0 00-.67-.52h-1.7a.75.75 0 00-.67.52l-.34 1.7a.75.75 0 01-.84.52l-1.7-.34a.75.75 0 01-.52-.84l.34-1.7z"></path><path fill-rule="evenodd" d="M3 9.34a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9.34zM10 3.16a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.16zM8.5 5.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.5 8.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 015.5 8.5zm9 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM10 16.84a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM8.5 14.5a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zm6.5 0a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" clip-rule="evenodd"></path></svg>
+                                </button>
+                            </div>
+                            <textarea id="editGroupPrompt" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Các câu hỏi con</label>
+                            <div id="editSubQuestionsContainer" class="mt-2 space-y-2"></div>
+                            <button type="button" id="addSubQuestionBtn" class="mt-2 text-sm text-indigo-600 hover:underline">Thêm câu hỏi con</button>
+                        </div>
                     </div>
                      <div class="mt-2">
                         <label class="flex items-center">
@@ -215,13 +277,33 @@
                             <button type="button" id="removeEditImageBtn" class="text-sm text-red-600 font-semibold hover:underline hidden">Xóa ảnh</button>
                         </div>
                     </div>
+                    <div class="flex justify-between items-center pt-4 border-t">
+                        <button id="ungroupBtn" class="hidden bg-red-100 text-red-800 font-bold py-2 px-6 rounded-md text-sm">Bỏ nhóm</button>
+                        <div class="flex justify-end space-x-3 flex-grow">
+                            <button id="cancelEditBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-md">Hủy</button>
+                            <button id="saveEditBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md">Lưu thay đổi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grouping Modal -->
+            <div id="groupModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Nhóm câu hỏi</h2>
+                    <p class="text-sm text-gray-600">Nhập phần dẫn chung cho các câu hỏi đã chọn. Các câu hỏi này sẽ được chuyển thành dạng Đúng/Sai (TF).</p>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Đáp án</label>
-                        <div id="editAnswerSection" class="mt-2 space-y-2"></div>
+                         <div class="flex justify-between items-center">
+                            <label for="groupPromptInput" class="block text-sm font-medium text-gray-700">Phần dẫn chung</label>
+                             <button type="button" class="ai-format-btn" onclick="formatTextWithAI(this)" title="Định dạng văn bản bằng AI">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M6.38 10.27a.75.75 0 01.67-.52h6.9a.75.75 0 01.67.52l.34 1.7a.75.75 0 01-.52.84l-1.7.34a.75.75 0 01-.84-.52l-.34-1.7a.75.75 0 00-.67-.52h-1.7a.75.75 0 00-.67.52l-.34 1.7a.75.75 0 01-.84.52l-1.7-.34a.75.75 0 01-.52-.84l.34-1.7z"></path><path fill-rule="evenodd" d="M3 9.34a.75.75 0 01.75-.75h12.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9.34zM10 3.16a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3.16zM8.5 5.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM5.5 8.5a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 015.5 8.5zm9 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM10 16.84a.75.75 0 01-.75-.75v-1.5a.75.75 0 011.5 0v1.5a.75.75 0 01-.75.75zM8.5 14.5a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75zm6.5 0a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 01.75.75z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                        <textarea id="groupPromptInput" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     </div>
                     <div class="flex justify-end space-x-3 pt-4 border-t">
-                        <button id="cancelEditBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-md">Hủy</button>
-                        <button id="saveEditBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md">Lưu thay đổi</button>
+                        <button id="cancelGroupBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-md">Hủy</button>
+                        <button id="confirmGroupBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md">Xác nhận</button>
                     </div>
                 </div>
             </div>
@@ -247,12 +329,16 @@
             const addAllToListBtn = qcContainer.querySelector('#addAllToListBtn');
             const subjectSelect = qcContainer.querySelector('#qc-subject');
             const questionsList = qcContainer.querySelector('#questionsList');
+            const groupBtn = qcContainer.querySelector('#groupBtn');
+            const addQuestionBtn = qcContainer.querySelector('#addQuestionBtn');
             const jsonOutput = qcContainer.querySelector('#jsonOutput code');
             const copyJsonBtn = qcContainer.querySelector('#copyJsonBtn');
             const downloadJsonBtn = qcContainer.querySelector('#downloadJsonBtn');
             const messageBox = qcContainer.querySelector('#messageBox');
             const importJsonBtn = qcContainer.querySelector('#importJsonBtn');
             const importFileInput = qcContainer.querySelector('#importFileInput');
+            
+            // Edit Modal Elements
             const editModal = qcContainer.querySelector('#editModal');
             const editQuestionIdInput = qcContainer.querySelector('#editQuestionId');
             const editQuestionIdPrefix = qcContainer.querySelector('#editQuestionIdPrefix');
@@ -262,16 +348,29 @@
             const editCognitiveLevelSelect = qcContainer.querySelector('#editCognitiveLevel');
             const editDifficultySelect = qcContainer.querySelector('#editDifficulty');
             const editRequiresCalculationCheckbox = qcContainer.querySelector('#editRequiresCalculation');
+            const editGroupFields = qcContainer.querySelector('#edit-group-fields');
+            const editNonGroupFields = qcContainer.querySelector('#edit-non-group-fields');
+            const editGroupPromptTextarea = qcContainer.querySelector('#editGroupPrompt');
+            const editSubQuestionsContainer = qcContainer.querySelector('#editSubQuestionsContainer');
+            const addSubQuestionBtn = qcContainer.querySelector('#addSubQuestionBtn');
             const editQuestionText = qcContainer.querySelector('#editQuestionText');
             const editAnswerSection = qcContainer.querySelector('#editAnswerSection');
             const saveEditBtn = qcContainer.querySelector('#saveEditBtn');
             const cancelEditBtn = qcContainer.querySelector('#cancelEditBtn');
+            const ungroupBtn = qcContainer.querySelector('#ungroupBtn');
             const pasteEditImageBtn = qcContainer.querySelector('#pasteEditImageBtn');
             const editImagePreview = qcContainer.querySelector('#editImagePreview');
             const editImageInput = qcContainer.querySelector('#editImageInput');
             const removeEditImageBtn = qcContainer.querySelector('#removeEditImageBtn');
             const editNoImageText = qcContainer.querySelector('#editNoImageText');
             const editImageSpinner = qcContainer.querySelector('#editImageSpinner');
+
+            // Group Modal Elements
+            const groupModal = qcContainer.querySelector('#groupModal');
+            const groupPromptInput = qcContainer.querySelector('#groupPromptInput');
+            const confirmGroupBtn = qcContainer.querySelector('#confirmGroupBtn');
+            const cancelGroupBtn = qcContainer.querySelector('#cancelGroupBtn');
+
 
             let questions = [];
             let parsedQuestions = [];
@@ -286,7 +385,7 @@
                 }, 3000);
             }
 
-            function getNextIdForSubject(subject) {
+            function getNextIdForSubject(subject, count) {
                 const subjectPrefixes = { 'chemistry': 'C', 'physics': 'P', 'biology': 'B', 'math': 'M', 'history': 'H', 'geography': 'G', 'literature': 'L', 'english': 'E', 'other': 'O' };
                 const prefix = subjectPrefixes[subject] || 'O';
                 const existingIdsForSubject = questions
@@ -295,11 +394,15 @@
                     .filter(num => !isNaN(num));
                 
                 const maxId = existingIdsForSubject.length > 0 ? Math.max(...existingIdsForSubject) : 0;
-                return `${prefix}${(maxId + 1).toString().padStart(2, '0')}`;
+                return `${prefix}${(maxId + count).toString().padStart(2, '0')}`;
             }
 
-            async function callGeminiAPI(payload) {
+            async function callGeminiAPI(payload, isFormatting = false) {
                 const apiKey = apiKeyInput.value.trim();
+                if (!apiKey) {
+                    showMessage('Vui lòng nhập API Key để sử dụng tính năng này.', true);
+                    return null;
+                }
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (!response.ok) {
@@ -310,12 +413,49 @@
                 if (!result.candidates || result.candidates.length === 0) {
                      throw new Error("API không trả về kết quả hợp lệ.");
                 }
-                const jsonString = result.candidates[0].content.parts[0].text;
-                parsedQuestions = JSON.parse(jsonString);
+                const textContent = result.candidates[0].content.parts[0].text;
+                
+                if (isFormatting) {
+                    return textContent;
+                }
+
+                parsedQuestions = JSON.parse(textContent);
                 if (!parsedQuestions || parsedQuestions.length === 0) {
                         throw new Error("AI không nhận diện được câu hỏi nào.");
                 }
                 displayAnalysisResults(parsedQuestions);
+            }
+
+            function cleanAiHtmlResponse(text) {
+                if (!text) return "";
+                // This regex will match ``` followed by an optional language identifier and a newline,
+                // and the closing ``` at the end of the string. It handles variations in whitespace.
+                return text.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+            }
+
+            window.formatTextWithAI = async function(button) {
+                const textarea = button.parentElement.nextElementSibling;
+                const text = textarea.value.trim();
+                if (!text) return;
+
+                const originalButtonContent = button.innerHTML;
+                button.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div>';
+                button.disabled = true;
+
+                try {
+                    const prompt = `Format the following Vietnamese text for scientific display in HTML. Convert common notations like H_2O to H<sub>2</sub>O, x^2 to x<sup>2</sup>. Do not change the meaning or add extra words. Just format the existing text:\n\n---\n${text}\n---`;
+                    const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                    let formattedText = await callGeminiAPI(payload, true);
+                    if (formattedText) {
+                        textarea.value = cleanAiHtmlResponse(formattedText);
+                    }
+                } catch (error) {
+                    console.error("AI Formatting Error:", error);
+                    showMessage(`Lỗi định dạng AI: ${error.message}`, true);
+                } finally {
+                    button.innerHTML = originalButtonContent;
+                    button.disabled = false;
+                }
             }
 
             async function analyzeTextWithAI() {
@@ -329,7 +469,7 @@
 2.  **difficulty**: The difficulty relative to its cognitive level. Use one of these three values: "easy", "medium", or "hard".
 3.  **requiresCalculation**: A boolean value. Set to true if the question involves numbers and requires mathematical steps to solve, otherwise set to false.
 The possible question types are: "mc" (Multiple choice), "tf" (True/False), "mtf" (Multiple True/False, where 'options' contains statements and 'answer' is an array of booleans), "fib" (Fill-in-the-blank). 
-RULES: 1. Remove any leading question numbers. 2. For "fib", extract the answer from keys like "(ĐS: ...)" and remove the key from the question. 3. For "tf", if a statement ends with "Đ" or "S", set the answer to "true" or "false" and remove the letter. 4. For "mtf", treat each sub-item as an option and determine its boolean answer. 5. Format superscripts (e.g., x^2 to x<sup>2</sup>) and subscripts (e.g., H_2O to H<sub>2</sub>O) with HTML tags. Here is the text: --- ${text} ---`;
+RULES: 1. Remove any leading question numbers. 2. For "fib", extract the answer from keys like "(ĐS: ...)" and remove the key from the question. 3. For "tf", if a statement ends with "Đ" or "S", set the answer to "true" or "false" and remove the letter. 4. For "mtf", treat the main question as the 'question' field, and each sub-item as an option and determine its boolean answer. 5. Format superscripts (e.g., x^2 to x<sup>2</sup>) and subscripts (e.g., H_2O to H<sub>2</sub>O) with HTML tags. Here is the text: --- ${text} ---`;
                 const schema = { type: "ARRAY", items: { type: "OBJECT", properties: { type: { type: "STRING", enum: ["mc", "tf", "mtf", "fib"] }, question: { type: "STRING" }, options: { type: "ARRAY", items: { type: "STRING" } }, answer: { oneOf: [{ type: "STRING" }, { type: "ARRAY", items: { type: "BOOLEAN" } }] }, difficulty: { type: "STRING", enum: ["easy", "medium", "hard"] }, cognitiveLevel: { type: "STRING", enum: ["recognition", "comprehension", "application", "high-order-application"] }, requiresCalculation: { type: "BOOLEAN" } }, required: ["type", "question", "difficulty", "cognitiveLevel", "requiresCalculation"] } };
                 const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
                 try {
@@ -351,7 +491,7 @@ RULES: 1. Remove any leading question numbers. 2. For "fib", extract the answer 
 2.  **difficulty**: The difficulty relative to its cognitive level. Use one of these three values: "easy", "medium", or "hard".
 3.  **requiresCalculation**: A boolean value. Set to true if the question involves numbers and requires mathematical steps to solve, otherwise set to false.
 The possible question types are: "mc" (Multiple choice), "tf" (True/False), "mtf" (Multiple True/False, where 'options' contains statements and 'answer' is an array of booleans), "fib" (Fill-in-the-blank). 
-RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct answer if it's highlighted and set the 'answer' to its zero-based index as a string. 3. For "fib", extract the answer from keys like "(ĐS: ...)" and remove the key from the question. 4. For "tf", if a statement ends with "Đ" or "S", set the answer to "true" or "false" and remove the letter. 5. For "mtf", treat each sub-item as an option and determine its boolean answer. 6. Format superscripts (e.g., x^2 to x<sup>2</sup>) and subscripts (e.g., H_2O to H<sub>2</sub>O) with HTML tags.`;
+RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct answer if it's highlighted and set the 'answer' to its zero-based index as a string. 3. For "fib", extract the answer from keys like "(ĐS: ...)" and remove the key from the question. 4. For "tf", if a statement ends with "Đ" or "S", set the answer to "true" or "false" and remove the letter. 5. For "mtf", treat the main question as the 'question' field, and each sub-item as an option and determine its boolean answer. 6. Format superscripts (e.g., x^2 to x<sup>2</sup>) and subscripts (e.g., H_2O to H<sub>2</sub>O) with HTML tags.`;
                 const schema = { type: "ARRAY", items: { type: "OBJECT", properties: { type: { type: "STRING", enum: ["mc", "tf", "mtf", "fib"] }, question: { type: "STRING" }, options: { type: "ARRAY", items: { type: "STRING" } }, answer: { oneOf: [{ type: "STRING" }, { type: "ARRAY", items: { type: "BOOLEAN" } }] }, difficulty: { type: "STRING", enum: ["easy", "medium", "hard"] }, cognitiveLevel: { type: "STRING", enum: ["recognition", "comprehension", "application", "high-order-application"] }, requiresCalculation: { type: "BOOLEAN" } }, required: ["type", "question", "difficulty", "cognitiveLevel", "requiresCalculation"] } };
                 const payload = { contents: [ { parts: [ { text: prompt }, { inlineData: { mimeType: "image/png", data: base64ImageData } } ] } ], generationConfig: { responseMimeType: "application/json", responseSchema: schema } };
                 try {
@@ -542,58 +682,69 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
 
             addAllToListBtn.addEventListener('click', () => {
                 let addedCount = 0;
-                const newQuestions = [];
                 const selectedSubject = subjectSelect.value; 
 
                 qcContainer.querySelectorAll('.analysis-card').forEach(card => {
                     const index = parseInt(card.dataset.index);
                     const parsedData = parsedQuestions[index];
-                    const difficulty = card.querySelector(`#difficulty-${index}`).value;
-                    const cognitiveLevel = card.querySelector(`#cognitiveLevel-${index}`).value;
-                    const requiresCalculation = card.querySelector(`#requiresCalculation-${index}`).checked;
                     
-                    const questionData = { 
-                        id: getNextIdForSubject(selectedSubject),
-                        type: parsedData.type, 
-                        question: parsedData.question, 
-                        subject: selectedSubject,
-                        difficulty: difficulty,
-                        cognitiveLevel: cognitiveLevel,
-                        requiresCalculation: requiresCalculation
-                    };
-                    
-                    if(parsedData.options) questionData.options = parsedData.options;
+                    if (parsedData.type === 'mtf') {
+                        const groupQuestion = {
+                            id: getNextIdForSubject(selectedSubject, questions.length + 1) + "_group",
+                            type: 'group',
+                            subject: selectedSubject,
+                            groupPrompt: parsedData.question,
+                            subQuestions: [],
+                            difficulty: card.querySelector(`#difficulty-${index}`).value,
+                            cognitiveLevel: card.querySelector(`#cognitiveLevel-${index}`).value,
+                            requiresCalculation: card.querySelector(`#requiresCalculation-${index}`).checked
+                        };
 
-                    const imgElement = card.querySelector(`#imagePreviewContainer-${index} img`);
-                    if (imgElement && imgElement.src) questionData.imageUrl = imgElement.src;
-
-                    switch(parsedData.type) {
-                        case 'mc':
-                            const selectedOption = card.querySelector(`input[name="answer-${index}"]:checked`);
-                            if (selectedOption) questionData.answer = parseInt(selectedOption.value);
-                            else if (parsedData.answer !== undefined) questionData.answer = parseInt(parsedData.answer);
-                            break;
-                        case 'tf':
-                            const selectedTFOption = card.querySelector(`input[name="answer-${index}"]:checked`);
-                            if (selectedTFOption) questionData.answer = selectedTFOption.value === 'true';
-                            else if (parsedData.answer !== undefined) questionData.answer = parsedData.answer === 'true';
-                            break;
-                        case 'mtf':
-                            const answers = [];
-                            (parsedData.options || []).forEach((opt, optIndex) => {
-                                const selected = card.querySelector(`input[name="answer-${index}-${optIndex}"]:checked`);
-                                answers.push(selected ? selected.value === 'true' : null);
+                        (parsedData.options || []).forEach((option, optIndex) => {
+                            const selected = card.querySelector(`input[name="answer-${index}-${optIndex}"]:checked`);
+                            const answer = selected ? selected.value === 'true' : null;
+                            groupQuestion.subQuestions.push({
+                                id: `${groupQuestion.id.replace('_group','')}-${optIndex + 1}`,
+                                question: option,
+                                answer: answer
                             });
-                            questionData.answer = answers;
-                            break;
-                        case 'fib':
-                            const fibAnswer = card.querySelector(`#fibAnswer-${index}`).value.trim();
-                            if (fibAnswer) questionData.answer = fibAnswer;
-                            break;
-                    }
+                        });
+                        questions.push(groupQuestion);
+                        addedCount++;
 
-                    questions.push(questionData);
-                    addedCount++;
+                    } else {
+                        const questionData = { 
+                            id: getNextIdForSubject(selectedSubject, questions.length + 1),
+                            type: parsedData.type, 
+                            question: parsedData.question, 
+                            subject: selectedSubject,
+                            difficulty: card.querySelector(`#difficulty-${index}`).value,
+                            cognitiveLevel: card.querySelector(`#cognitiveLevel-${index}`).value,
+                            requiresCalculation: card.querySelector(`#requiresCalculation-${index}`).checked
+                        };
+                        
+                        if(parsedData.options) questionData.options = parsedData.options;
+
+                        const imgElement = card.querySelector(`#imagePreviewContainer-${index} img`);
+                        if (imgElement && imgElement.src) questionData.imageUrl = imgElement.src;
+
+                        switch(parsedData.type) {
+                            case 'mc':
+                                const selectedOption = card.querySelector(`input[name="answer-${index}"]:checked`);
+                                questionData.answer = selectedOption ? parseInt(selectedOption.value) : (parsedData.answer !== undefined ? parseInt(parsedData.answer) : undefined);
+                                break;
+                            case 'tf':
+                                const selectedTFOption = card.querySelector(`input[name="answer-${index}"]:checked`);
+                                questionData.answer = selectedTFOption ? selectedTFOption.value === 'true' : (parsedData.answer !== undefined ? parsedData.answer === 'true' : undefined);
+                                break;
+                            case 'fib':
+                                const fibAnswer = card.querySelector(`#fibAnswer-${index}`).value.trim();
+                                questionData.answer = fibAnswer || parsedData.answer;
+                                break;
+                        }
+                        questions.push(questionData);
+                        addedCount++;
+                    }
                 });
                 
                 rawQuestionText.value = '';
@@ -614,13 +765,51 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
 
                 if (questions.length === 0) {
                     questionsList.innerHTML = '<p id="emptyListMessage" class="text-gray-500 text-center py-4">Chưa có câu hỏi nào.</p>';
-                } else {
-                    if(emptyMsg) emptyMsg.remove();
-                    questionsList.innerHTML = '';
-                    questions.forEach((q) => {
+                    return;
+                }
+                
+                if(emptyMsg) emptyMsg.remove();
+                questionsList.innerHTML = '';
+                
+                questions.forEach((q) => {
+                    const container = document.createElement('div');
+                    container.className = 'question-card-container';
+
+                    if (q.type === 'group') {
+                        const groupLeadDiv = document.createElement('div');
+                        groupLeadDiv.className = 'group-lead';
+                        groupLeadDiv.innerHTML = q.groupPrompt;
+                        container.appendChild(groupLeadDiv);
+                        
+                        q.subQuestions.forEach(sq => {
+                            const subCardContainer = document.createElement('div');
+                            subCardContainer.className = 'flex items-center gap-2 ml-4';
+                            const subCard = document.createElement('div');
+                            const isUnanswered = sq.answer === undefined || sq.answer === null || sq.answer === '';
+                            subCard.className = `question-card bg-gray-50 p-4 rounded-lg border shadow-sm flex-grow ${isUnanswered ? 'border-red-400 border-l-4' : 'border-gray-200'}`;
+                            subCard.innerHTML = `<div class="flex justify-between items-start">
+                                                    <div>
+                                                        <p class="font-bold text-indigo-700">${sq.id}</p>
+                                                        <p class="mt-1 text-gray-800">${sq.question}</p>
+                                                        ${isUnanswered ? '<p class="text-xs text-red-600 font-semibold mt-2">Chưa có đáp án</p>' : ''}
+                                                    </div>
+                                                    <button onclick="qcOpenEditModal('${q.id}')" class="text-xs bg-blue-100 text-blue-700 font-semibold py-1 px-3 rounded-full hover:bg-blue-200">Sửa nhóm</button>
+                                                </div>`;
+                            subCardContainer.appendChild(subCard);
+                            container.appendChild(subCardContainer);
+                        });
+                    } else {
+                        container.classList.add('flex', 'items-center', 'gap-2');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = q.id;
+                        checkbox.className = 'question-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500';
+                        checkbox.addEventListener('change', handleSelectionChange);
+                        container.appendChild(checkbox);
+
                         const card = document.createElement('div');
-                        const isUnanswered = q.answer === undefined || q.answer === null || q.answer === '' || (Array.isArray(q.answer) && q.answer.some(a => a === null));
-                        card.className = `question-card bg-gray-50 p-4 rounded-lg border shadow-sm ${isUnanswered ? 'border-red-400 border-l-4' : 'border-gray-200'}`;
+                        const isUnanswered = q.answer === undefined || q.answer === null || q.answer === '';
+                        card.className = `question-card bg-gray-50 p-4 rounded-lg border shadow-sm flex-grow ${isUnanswered ? 'border-red-400 border-l-4' : 'border-gray-200'}`;
                         
                         const difficultyText = difficultyMap[q.difficulty] || 'N/A';
                         const cognitiveText = cognitiveLevelMap[q.cognitiveLevel] || 'N/A';
@@ -647,9 +836,10 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                                     <button onclick="qcRemoveQuestion('${q.id}')" class="text-xs bg-gray-100 text-gray-600 font-semibold py-1 px-3 rounded-full hover:bg-gray-200">&times; Xóa</button>
                                 </div>
                             </div>`;
-                        questionsList.appendChild(card);
-                    });
-                }
+                        container.appendChild(card);
+                    }
+                    questionsList.appendChild(container);
+                });
             }
 
             function updateJsonOutput() {
@@ -662,6 +852,8 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
 
             function renderEditAnswerSection(question) {
                 editAnswerSection.innerHTML = '';
+                // editQuestionTypeSelect.disabled = !!question.groupId; // Disable type change for grouped questions
+
                 switch(question.type) {
                     case 'mc':
                         const options = question.options && question.options.length > 0 ? question.options : ['', '', '', ''];
@@ -669,17 +861,6 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                         break;
                     case 'tf':
                         editAnswerSection.innerHTML = `<label class="flex items-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"><input type="radio" name="editAnswer" value="true" class="h-4 w-4 text-indigo-600" ${question.answer === true ? 'checked' : ''}><span class="ml-3 text-gray-700">Đúng (True)</span></label><label class="flex items-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"><input type="radio" name="editAnswer" value="false" class="h-4 w-4 text-indigo-600" ${question.answer === false ? 'checked' : ''}><span class="ml-3 text-gray-700">Sai (False)</span></label>`;
-                        break;
-                    case 'mtf':
-                        const mtfOptions = question.options || [''];
-                        const mtfAnswers = question.answer || [];
-                        editAnswerSection.innerHTML = mtfOptions.map((option, index) => `
-                            <div class="mtf-option-group flex items-center gap-2 p-2 rounded-md hover:bg-gray-100">
-                                <input type="text" class="flex-grow text-sm text-gray-700 border-b focus:outline-none focus:border-indigo-500" value="${option}">
-                                <label class="flex items-center cursor-pointer"><input type="radio" name="editMtfAnswer-${index}" value="true" class="h-4 w-4 text-indigo-600" ${mtfAnswers[index] === true ? 'checked' : ''}><span class="ml-1 text-sm">Đ</span></label>
-                                <label class="flex items-center cursor-pointer"><input type="radio" name="editMtfAnswer-${index}" value="false" class="h-4 w-4 text-indigo-600" ${mtfAnswers[index] === false ? 'checked' : ''}><span class="ml-1 text-sm">S</span></label>
-                                <button type="button" onclick="qcRemoveMtfOption(this)" class="text-red-500 font-bold">&times;</button>
-                            </div>`).join('') + '<button type="button" onclick="qcAddMtfOption()" class="mt-2 text-sm text-indigo-600 hover:underline">Thêm phát biểu</button>';
                         break;
                     case 'fib':
                         const answerText = (question.answer !== undefined && question.answer !== null) ? question.answer : '';
@@ -699,25 +880,6 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
             window.qcRemoveOption = function(button) {
                 button.parentElement.remove();
             }
-            
-            window.qcAddMtfOption = function() {
-                const container = qcContainer.querySelector('#editAnswerSection');
-                const newOptionDiv = document.createElement('div');
-                const newIndex = container.querySelectorAll('.mtf-option-group').length;
-                newOptionDiv.className = 'mtf-option-group flex items-center gap-2 p-2 rounded-md hover:bg-gray-100';
-                newOptionDiv.innerHTML = `
-                    <input type="text" class="flex-grow text-sm text-gray-700 border-b focus:outline-none focus:border-indigo-500" value="">
-                    <label class="flex items-center cursor-pointer"><input type="radio" name="editMtfAnswer-${newIndex}" value="true" class="h-4 w-4 text-indigo-600"><span class="ml-1 text-sm">Đ</span></label>
-                    <label class="flex items-center cursor-pointer"><input type="radio" name="editMtfAnswer-${newIndex}" value="false" class="h-4 w-4 text-indigo-600"><span class="ml-1 text-sm">S</span></label>
-                    <button type="button" onclick="qcRemoveMtfOption(this)" class="text-red-500 font-bold">&times;</button>
-                `;
-                container.insertBefore(newOptionDiv, container.lastChild);
-            }
-
-            window.qcRemoveMtfOption = function(button) {
-                button.parentElement.remove();
-            }
-
 
             window.qcOpenEditModal = function(questionId) {
                 const question = questions.find(q => q.id === questionId);
@@ -725,17 +887,28 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
 
                 editQuestionIdInput.value = questionId;
                 
-                const match = question.id.match(/^([A-Z]+)(\d+)$/);
+                const match = question.id.match(/^([A-Z]+)(\d+)/);
                 if (match) {
                     editQuestionIdPrefix.textContent = match[1];
                     editQuestionIdNumber.value = parseInt(match[2], 10);
                 }
 
-                editQuestionText.value = question.question;
                 editQuestionTypeSelect.value = question.type;
                 editCognitiveLevelSelect.value = question.cognitiveLevel || 'recognition';
                 editDifficultySelect.value = question.difficulty || 'medium';
                 editRequiresCalculationCheckbox.checked = question.requiresCalculation || false;
+                
+                if (question.type === 'group') {
+                    editGroupFields.classList.remove('hidden');
+                    editNonGroupFields.classList.add('hidden');
+                    editGroupPromptTextarea.value = question.groupPrompt || '';
+                    renderEditSubQuestions(question.subQuestions || []);
+                } else {
+                    editGroupFields.classList.add('hidden');
+                    editNonGroupFields.classList.remove('hidden');
+                    editQuestionText.value = question.question;
+                    renderEditAnswerSection(question);
+                }
                 
                 editSubjectSelect.innerHTML = '';
                 Array.from(subjectSelect.options).forEach(opt => {
@@ -758,17 +931,21 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                     removeEditImageBtn.classList.add('hidden');
                 }
 
-                renderEditAnswerSection(question);
                 editModal.classList.remove('hidden');
             }
 
             editQuestionTypeSelect.addEventListener('change', (event) => {
-                const questionId = editQuestionIdInput.value;
-                const question = questions.find(q => q.id === questionId) || { type: event.target.value };
-                
                 const newType = event.target.value;
-                const tempQuestion = { ...question, type: newType, answer: undefined, options: newType === 'mtf' ? [''] : undefined };
-                renderEditAnswerSection(tempQuestion);
+                if (newType === 'group') {
+                    editGroupFields.classList.remove('hidden');
+                    editNonGroupFields.classList.add('hidden');
+                    renderEditSubQuestions([]);
+                } else {
+                    editGroupFields.classList.add('hidden');
+                    editNonGroupFields.classList.remove('hidden');
+                    const tempQuestion = { type: newType };
+                    renderEditAnswerSection(tempQuestion);
+                }
             });
 
             editImageInput.onchange = async function(event) {
@@ -858,44 +1035,49 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                 question.difficulty = editDifficultySelect.value;
                 question.cognitiveLevel = editCognitiveLevelSelect.value;
                 question.requiresCalculation = editRequiresCalculationCheckbox.checked;
-                question.question = editQuestionText.value;
                 
+                if (question.type === 'group') {
+                    question.groupPrompt = cleanAiHtmlResponse(editGroupPromptTextarea.value);
+                    const subQuestions = [];
+                    editSubQuestionsContainer.querySelectorAll('.sub-question-group').forEach((group, index) => {
+                        subQuestions.push({
+                            id: `${newId}-${index + 1}`,
+                            question: group.querySelector('textarea').value,
+                            answer: group.querySelector('input[type="radio"]:checked')?.value === 'true'
+                        });
+                    });
+                    question.subQuestions = subQuestions;
+                    delete question.question;
+                    delete question.answer;
+                    delete question.options;
+                } else {
+                    question.question = editQuestionText.value;
+                    delete question.groupPrompt;
+                    delete question.subQuestions;
+                    
+                    switch(question.type) {
+                        case 'mc':
+                            const selectedOption = editAnswerSection.querySelector('input[name="editAnswer"]:checked');
+                            question.answer = selectedOption ? parseInt(selectedOption.value) : undefined;
+                            const optionInputs = editAnswerSection.querySelectorAll('input[type="text"]');
+                            question.options = Array.from(optionInputs).map(input => input.value);
+                            break;
+                        case 'tf':
+                            const selectedTFOption = editAnswerSection.querySelector('input[name="editAnswer"]:checked');
+                            question.answer = selectedTFOption ? (selectedTFOption.value === 'true') : undefined;
+                            break;
+                        case 'fib':
+                            const fibAnswer = qcContainer.querySelector('#editFibAnswer').value.trim();
+                            question.answer = fibAnswer ? fibAnswer : undefined;
+                            break;
+                    }
+                }
+
                 const hasImage = editImagePreview.src && editImagePreview.src.startsWith('data:image');
                 if (hasImage) {
                     question.imageUrl = editImagePreview.src;
                 } else {
                     delete question.imageUrl;
-                }
-
-                question.answer = undefined;
-                delete question.options;
-
-                switch(question.type) {
-                    case 'mc':
-                        const selectedOption = editAnswerSection.querySelector('input[name="editAnswer"]:checked');
-                        question.answer = selectedOption ? parseInt(selectedOption.value) : undefined;
-                        const optionInputs = editAnswerSection.querySelectorAll('input[type="text"]');
-                        question.options = Array.from(optionInputs).map(input => input.value);
-                        break;
-                    case 'tf':
-                        const selectedTFOption = editAnswerSection.querySelector('input[name="editAnswer"]:checked');
-                        question.answer = selectedTFOption ? (selectedTFOption.value === 'true') : undefined;
-                        break;
-                    case 'mtf':
-                        const mtfOptions = [];
-                        const mtfAnswers = [];
-                        editAnswerSection.querySelectorAll('.mtf-option-group').forEach((group, index) => {
-                            mtfOptions.push(group.querySelector('input[type="text"]').value);
-                            const selected = group.querySelector(`input[name="editMtfAnswer-${index}"]:checked`);
-                            mtfAnswers.push(selected ? selected.value === 'true' : null);
-                        });
-                        question.options = mtfOptions;
-                        question.answer = mtfAnswers;
-                        break;
-                    case 'fib':
-                        const fibAnswer = qcContainer.querySelector('#editFibAnswer').value.trim();
-                        question.answer = fibAnswer ? fibAnswer : undefined;
-                        break;
                 }
 
                 renderQuestionsList();
@@ -911,6 +1093,93 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                 showMessage('Đã xóa câu hỏi.', false);
             }
             
+            function handleSelectionChange() {
+                const selected = questionsList.querySelectorAll('.question-checkbox:checked');
+                const allAreTf = Array.from(selected).every(cb => {
+                    const q = questions.find(q => q.id === cb.value);
+                    return q && q.type === 'tf';
+                });
+                groupBtn.classList.toggle('hidden', selected.length < 2 || !allAreTf);
+            }
+
+            groupBtn.addEventListener('click', () => {
+                groupPromptInput.value = '';
+                groupModal.classList.remove('hidden');
+            });
+
+            cancelGroupBtn.addEventListener('click', () => {
+                groupModal.classList.add('hidden');
+            });
+
+            confirmGroupBtn.addEventListener('click', () => {
+                const selectedCheckboxes = questionsList.querySelectorAll('.question-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+                let groupPrompt = groupPromptInput.value.trim();
+                groupPrompt = cleanAiHtmlResponse(groupPrompt);
+
+
+                if (groupPrompt === '') {
+                    showMessage('Vui lòng nhập phần dẫn chung.', true);
+                    return;
+                }
+
+                const firstQuestion = questions.find(q => q.id === selectedIds[0]);
+                if (!firstQuestion) return;
+
+                const newGroupQuestion = {
+                    id: getNextIdForSubject(firstQuestion.subject, questions.length + 1) + "_group",
+                    type: 'group',
+                    subject: firstQuestion.subject,
+                    groupPrompt: groupPrompt,
+                    subQuestions: [],
+                    difficulty: firstQuestion.difficulty,
+                    cognitiveLevel: firstQuestion.cognitiveLevel,
+                    requiresCalculation: firstQuestion.requiresCalculation
+                };
+
+                selectedIds.forEach((id, index) => {
+                    const q = questions.find(q => q.id === id);
+                    if (q) {
+                        newGroupQuestion.subQuestions.push({
+                            id: `${newGroupQuestion.id.replace('_group','')}-${index + 1}`,
+                            question: q.question,
+                            answer: q.answer
+                        });
+                    }
+                });
+                
+                questions = questions.filter(q => !selectedIds.includes(q.id));
+                questions.push(newGroupQuestion);
+
+                groupModal.classList.add('hidden');
+                renderQuestionsList();
+                updateJsonOutput();
+                showMessage('Đã nhóm các câu hỏi thành công.', false);
+            });
+
+
+            function ungroupQuestions(questionId) {
+                const groupQuestionIndex = questions.findIndex(q => q.id === questionId);
+                if (groupQuestionIndex === -1) return;
+
+                const groupQuestion = questions[groupQuestionIndex];
+                const newQuestions = groupQuestion.subQuestions.map(sq => ({
+                    ...sq,
+                    type: 'tf',
+                    subject: groupQuestion.subject,
+                    difficulty: groupQuestion.difficulty,
+                    cognitiveLevel: groupQuestion.cognitiveLevel,
+                    requiresCalculation: groupQuestion.requiresCalculation,
+                }));
+
+                questions.splice(groupQuestionIndex, 1, ...newQuestions);
+                
+                editModal.classList.add('hidden');
+                renderQuestionsList();
+                updateJsonOutput();
+                showMessage('Đã bỏ nhóm câu hỏi.', false);
+            }
+
             copyJsonBtn.addEventListener('click', function() {
                 const jsonText = jsonOutput.textContent;
                 if (questions.length > 0 && !jsonText.startsWith('//')) {
@@ -978,9 +1247,9 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                         return;
                     }
                     
-                    const isValid = importedData.every(q => q && typeof q.id === 'string' && typeof q.type === 'string' && typeof q.question === 'string');
+                    const isValid = importedData.every(q => q && typeof q.id === 'string' && typeof q.type === 'string' && (q.type === 'group' ? q.groupPrompt && Array.isArray(q.subQuestions) : typeof q.question === 'string'));
                     if (!isValid) {
-                         showMessage('Lỗi: Một hoặc nhiều câu hỏi trong tệp bị thiếu các trường bắt buộc (id, type, question).', true);
+                         showMessage('Lỗi: Một hoặc nhiều câu hỏi trong tệp bị thiếu các trường bắt buộc.', true);
                          return;
                     }
 
@@ -991,6 +1260,12 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                             duplicates.push(q.id);
                         }
                         ids.add(q.id);
+                        if(q.type === 'group' && q.subQuestions) {
+                            q.subQuestions.forEach(sq => {
+                                if(ids.has(sq.id)) duplicates.push(sq.id);
+                                ids.add(sq.id);
+                            });
+                        }
                     });
                     if (duplicates.length > 0) {
                         showMessage(`Cảnh báo: Tệp chứa các ID trùng lặp: ${duplicates.join(', ')}. Vui lòng sửa lại.`, true);
@@ -1008,6 +1283,25 @@ RULES: 1. Remove any leading question numbers. 2. For "mc", detect the correct a
                 };
                 reader.readAsText(file);
             });
+
+            addQuestionBtn.addEventListener('click', () => {
+                const newQuestion = {
+                    id: getNextIdForSubject(subjectSelect.value, questions.length + 1),
+                    type: 'mc', // Default to MC for manual creation
+                    question: 'Câu hỏi mới',
+                    subject: subjectSelect.value,
+                    difficulty: 'medium',
+                    cognitiveLevel: 'recognition',
+                    requiresCalculation: false,
+                    answer: undefined,
+                    options: ['', '', '', '']
+                };
+                questions.push(newQuestion);
+                renderQuestionsList();
+                updateJsonOutput();
+                qcOpenEditModal(newQuestion.id); // Open modal immediately
+            });
+
              // Initial render
             renderQuestionsList();
             updateJsonOutput();
